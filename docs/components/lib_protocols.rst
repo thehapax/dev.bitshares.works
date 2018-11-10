@@ -31,7 +31,7 @@ Components and Descriptions
 
 Base
 =========
-
+   
 base 
 ---------------
 
@@ -290,6 +290,8 @@ authority
 	 };
 
  
+add_authority_accounts
+^^^^^^^^^^^^^^^^^^^^^^^^^
 	
 - Add all account members of the given authority to the given flat_set.
 
@@ -783,6 +785,9 @@ account
 	bool is_cheap_name( const string& n );
 
 
+account_options
+^^^^^^^^^^^^^^^^^	
+	
 - These are the fields which can be updated by the active authority.
 
 .. code-block:: cpp
@@ -807,7 +812,7 @@ account
 	  void validate()const;
 	};
 
-**The description of `account_options` elements**
+**The description of ``account_options`` elements**
 
 +-------------------------+--------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Parameter               |                    | Description                                                                                                                                                                |
@@ -829,15 +834,30 @@ account
 
 (**2:  voting_account = GRAPHENE_PROXY_TO_SELF_ACCOUNT; )
 
-.. code-block:: cpp
 
-	struct account_create_operation : public base_operation
 
++---+--------------------------------+
+|   | (Operations)                   |
++===+================================+
+|   | - account_create_operation     |
++---+--------------------------------+
+|   | - account_update_operation     |
++---+--------------------------------+
+|   | - account_whitelist_operation  |
++---+--------------------------------+
+|   | - account_upgrade_operation    |
++---+--------------------------------+
+|   | - account_transfer_operation   |
++---+--------------------------------+
+
+	
 	
 
 memo 
 --------------------- 
 
+memo_data
+^^^^^^^^^^^^^^
 
 - defines the keys used to derive the shared secret
 
@@ -876,6 +896,10 @@ memo
 		const fc::ecc::public_key& pub)const;
 	}
 
+	
+memo_message
+^^^^^^^^^^^^^^^^^^^
+	
 - defines a message and checksum to enable validation of successful decryption
 - When encrypting/decrypting a checksum is required to determine whether or not decryption was successful.
  
@@ -946,6 +970,9 @@ section transaction_fees Fees
 
 Stealth transfers can have an arbitrarylly large size and therefore the transaction fee for stealth transfers is based purley on the data size of the transaction.
 
+blind_memo
+^^^^^^^^^^^^^^^^^
+
 - stealth
 - This data is encrypted and stored in the encrypted memo portion of the blind output.
 - set to the first 4 bytes of the shared secret used to encrypt the memo.  Used to verify that decryption was successful.
@@ -961,6 +988,9 @@ Stealth transfers can have an arbitrarylly large size and therefore the transact
 	};
 
 
+blind_input
+^^^^^^^^^^^
+
 - stealth
 - provided to maintain the invariant that all authority required by an operation is explicit in the operation.  Must match blinded_balance_id->owner
 
@@ -973,6 +1003,9 @@ Stealth transfers can have an arbitrarylly large size and therefore the transact
 	};
 
 
+stealth_confirmation
+^^^^^^^^^^^^^^^^^^^^^^^^^
+	
 -  When sending a stealth tranfer we assume users are unable to scan the full blockchain; therefore, payments require confirmation data to be passed out of band.   We assume this out-of-band channel is not secure and therefore the contents of the confirmation must be encrypted
 
 .. code-block:: cpp
@@ -999,6 +1032,9 @@ Stealth transfers can have an arbitrarylly large size and therefore the transact
 	};
 
 
+blind_output
+^^^^^^^^^^^^^^^^
+	
 - class blind_output
 - Defines data required to create a new blind commitment
 - stealth
@@ -1038,12 +1074,15 @@ custom
 
 	
 
-Asset 
+Assert 
 =================
 
 
 assert 
 ---------------
+
+account_name_eq_lit_predicate
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Used to verify that account_id->name is equal to the given string literal.
 - Perform state-independent checks.  Verify account_name is a valid account name.
@@ -1058,6 +1097,9 @@ assert
 	};
 	
 
+asset_symbol_eq_lit_predicate
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+	
 - Used to verify that asset_id->symbol is equal to the given string literal.
 - Perform state independent checks.  Verify symbol is a valid asset symbol.
 
@@ -1071,6 +1113,9 @@ assert
 	};
 
 
+block_id_predicate
+^^^^^^^^^^^^^^^^^^^^^
+	
 - Used to verify that a specific block is part of the blockchain history.  This helps protect some high-value transactions to newly created IDs.
 - The block ID must be within the last 2^16 blocks.
 
@@ -1101,84 +1146,94 @@ assert
 |   | -  assert_operation            |
 +---+--------------------------------+
 
+
+Asset 
+=================
+
+
 asset 
 ---------------
+
 
 .. code-block:: cpp
 
 
-	extern const int64_t scaled_precision_lut[];
+   extern const int64_t scaled_precision_lut[];
 
-	struct `price`;
+   struct price;
 
-	struct asset
-	{
-	  asset( share_type a = 0, asset_id_type id = asset_id_type() )
-		:amount(a),asset_id(id){}
+   struct asset
+   {
+      asset( share_type a = 0, asset_id_type id = asset_id_type() )
+      :amount(a),asset_id(id){}
 
-	  share_type    amount;
-	  asset_id_type asset_id;
+      share_type    amount;
+      asset_id_type asset_id;
 
-	  asset& operator += ( const asset& o )
-		{
-			 FC_ASSERT( asset_id == o.asset_id );
-			 amount += o.amount;
-			 return *this;
-		}
-		asset& operator -= ( const asset& o )
-		{
-			 FC_ASSERT( asset_id == o.asset_id );
-			 amount -= o.amount;
-			 return *this;
-		}
-		asset operator -()const { return asset( -amount, asset_id ); }
+      asset& operator += ( const asset& o )
+      {
+         FC_ASSERT( asset_id == o.asset_id );
+         amount += o.amount;
+         return *this;
+      }
+      asset& operator -= ( const asset& o )
+      {
+         FC_ASSERT( asset_id == o.asset_id );
+         amount -= o.amount;
+         return *this;
+      }
+      asset operator -()const { return asset( -amount, asset_id ); }
 
-		friend bool operator == ( const asset& a, const asset& b )
-		{
-			 return std::tie( a.asset_id, a.amount ) == std::tie( b.asset_id, b.amount );
-		}
-		friend bool operator < ( const asset& a, const asset& b )
-		{
-			 FC_ASSERT( a.asset_id == b.asset_id );
-			 return a.amount < b.amount;
-		}
-		friend inline bool operator <= ( const asset& a, const asset& b )
-		{
-			 return !(b < a);
-		}
+      friend bool operator == ( const asset& a, const asset& b )
+      {
+         return std::tie( a.asset_id, a.amount ) == std::tie( b.asset_id, b.amount );
+      }
+      friend bool operator < ( const asset& a, const asset& b )
+      {
+         FC_ASSERT( a.asset_id == b.asset_id );
+         return a.amount < b.amount;
+      }
+      friend inline bool operator <= ( const asset& a, const asset& b )
+      {
+         return !(b < a);
+      }
 
-		friend inline bool operator != ( const asset& a, const asset& b )
-		{
-			 return !(a == b);
-		}
-		friend inline bool operator > ( const asset& a, const asset& b )
-		{
-			 return (b < a);
-		}
-		friend inline bool operator >= ( const asset& a, const asset& b )
-		{
-			 return !(a < b);
-		}
+      friend inline bool operator != ( const asset& a, const asset& b )
+      {
+         return !(a == b);
+      }
+      friend inline bool operator > ( const asset& a, const asset& b )
+      {
+         return (b < a);
+      }
+      friend inline bool operator >= ( const asset& a, const asset& b )
+      {
+         return !(a < b);
+      }
 
-		friend asset operator - ( const asset& a, const asset& b )
-		{
-			 FC_ASSERT( a.asset_id == b.asset_id );
-			 return asset( a.amount - b.amount, a.asset_id );
-		}
-		friend asset operator + ( const asset& a, const asset& b )
-		{
-			 FC_ASSERT( a.asset_id == b.asset_id );
-			 return asset( a.amount + b.amount, a.asset_id );
-		}
+      friend asset operator - ( const asset& a, const asset& b )
+      {
+         FC_ASSERT( a.asset_id == b.asset_id );
+         return asset( a.amount - b.amount, a.asset_id );
+      }
+      friend asset operator + ( const asset& a, const asset& b )
+      {
+         FC_ASSERT( a.asset_id == b.asset_id );
+         return asset( a.amount + b.amount, a.asset_id );
+      }
 
-		static share_type scaled_precision( uint8_t precision )
-		{
-			 FC_ASSERT( precision < 19 );
-			 return scaled_precision_lut[ precision ];
-		}
+      static share_type scaled_precision( uint8_t precision )
+      {
+         FC_ASSERT( precision < 19 );
+         return scaled_precision_lut[ precision ];
+      }
 
-		asset multiply_and_round_up( const price& p )const; ///< Multiply and round up
-	};
+      asset multiply_and_round_up( const price& p )const; ///< Multiply and round up
+   };
+
+
+price
+^^^^^^^^^^^^^^
 
 - The price struct stores asset prices in the Graphene system.
 - A price is defined as a ratio between two assets, and represents a possible exchange rate between those two assets. prices are generally not stored in any simplified form, i.e. a price of (1000 CORE)/(20 USD) is perfectly normal.
@@ -1186,51 +1241,60 @@ asset
 
 .. code-block:: cpp
 
-	struct price
-	{
-		explicit price(const asset& _base = asset(), const asset _quote = asset())
-			 : base(_base),quote(_quote){}
+   struct price
+   {
+      explicit price(const asset& _base = asset(), const asset& _quote = asset())
+         : base(_base),quote(_quote){}
 
-		asset base;
-		asset quote;
+      asset base;
+      asset quote;
 
-		static price max(asset_id_type base, asset_id_type quote );
-		static price min(asset_id_type base, asset_id_type quote );
+      static price max(asset_id_type base, asset_id_type quote );
+      static price min(asset_id_type base, asset_id_type quote );
 
-		static price call_price(const asset& debt, const asset& collateral, uint16_t collateral_ratio);
+      static price call_price(const asset& debt, const asset& collateral, uint16_t collateral_ratio);
 
-		/// The unit price for an asset type A is defined to be a price such that for any asset m, m*A=m
-		static price unit_price(asset_id_type a = asset_id_type()) { return price(asset(1, a), asset(1, a)); }
+      /// The unit price for an asset type A is defined to be a price such that for any asset m, m*A=m
+      static price unit_price(asset_id_type a = asset_id_type()) { return price(asset(1, a), asset(1, a)); }
 
-		price max()const { return price::max( base.asset_id, quote.asset_id ); }
-		price min()const { return price::min( base.asset_id, quote.asset_id ); }
+      price max()const { return price::max( base.asset_id, quote.asset_id ); }
+      price min()const { return price::min( base.asset_id, quote.asset_id ); }
 
-		double to_real()const { return double(base.amount.value)/double(quote.amount.value); }
+      double to_real()const { return double(base.amount.value)/double(quote.amount.value); }
 
-		bool is_null()const;
-		void validate()const;
-	};
+      bool is_null()const;
+      void validate()const;
+   };
 
-	price operator / ( const asset& base, const asset& quote );
-	inline price operator~( const price& p ) { return price{p.quote,p.base}; }
 
-	bool  operator <  ( const price& a, const price& b );
-	bool  operator == ( const price& a, const price& b );
+   
+.. code-block:: cpp
+   
+   price operator / ( const asset& base, const asset& quote );
+   inline price operator~( const price& p ) { return price{p.quote,p.base}; }
 
-	inline bool  operator >  ( const price& a, const price& b ) { return (b < a); }
-	inline bool  operator <= ( const price& a, const price& b ) { return !(b < a); }
-	inline bool  operator >= ( const price& a, const price& b ) { return !(a < b); }
-	inline bool  operator != ( const price& a, const price& b ) { return !(a == b); }
+   bool  operator <  ( const price& a, const price& b );
+   bool  operator == ( const price& a, const price& b );
 
-	asset operator *  ( const asset& a, const price& b ); ///< Multiply and round down
+   inline bool  operator >  ( const price& a, const price& b ) { return (b < a); }
+   inline bool  operator <= ( const price& a, const price& b ) { return !(b < a); }
+   inline bool  operator >= ( const price& a, const price& b ) { return !(a < b); }
+   inline bool  operator != ( const price& a, const price& b ) { return !(a == b); }
 
-	price operator *  ( const price& p, const ratio_type& r );
-	price operator /  ( const price& p, const ratio_type& r );
+   asset operator *  ( const asset& a, const price& b ); ///< Multiply and round down
 
-	inline price& operator *=  ( price& p, const ratio_type& r ) { return p = p * r; }
-	inline price& operator /=  ( price& p, const ratio_type& r ) { return p = p / r; }
+   price operator *  ( const price& p, const ratio_type& r );
+   price operator /  ( const price& p, const ratio_type& r );
+
+   inline price& operator *=  ( price& p, const ratio_type& r )
+   { return p = p * r; }
+   inline price& operator /=  ( price& p, const ratio_type& r )
+   { return p = p / r; }
 	
 
+price_feed
+^^^^^^^^^^^^^^^^	
+	
 - class price_feed
 - defines market parameters for margin positions
 - Required maintenance collateral is defined as a fixed point number with a maximum value of 10.000 and a minimum value of 1.000.  (denominated in GRAPHENE_COLLATERAL_RATIO_DENOM)
@@ -1244,36 +1308,43 @@ asset
 	{
 
 		**Forced settlements will evaluate using this price, defined as BITASSET / COLLATERAL**
-		price settlement_price;
+      price settlement_price;
 
-		- Price at which automatically exchanging this asset for CORE from fee pool occurs (used for paying fees)
-		price core_exchange_rate;
+      /// Price at which automatically exchanging this asset for CORE from fee pool occurs (used for paying fees)
+      price core_exchange_rate;
 
-		- Fixed point between 1.000 and 10.000, implied fixed point denominator is GRAPHENE_COLLATERAL_RATIO_DENOM */
-		uint16_t maintenance_collateral_ratio = GRAPHENE_DEFAULT_MAINTENANCE_COLLATERAL_RATIO;
+      /** Fixed point between 1.000 and 10.000, implied fixed point denominator is GRAPHENE_COLLATERAL_RATIO_DENOM */
+      uint16_t maintenance_collateral_ratio = GRAPHENE_DEFAULT_MAINTENANCE_COLLATERAL_RATIO;
 
-		- Fixed point between 1.000 and 10.000, implied fixed point denominator is GRAPHENE_COLLATERAL_RATIO_DENOM */
-		uint16_t maximum_short_squeeze_ratio = GRAPHENE_DEFAULT_MAX_SHORT_SQUEEZE_RATIO;
+      /** Fixed point between 1.000 and 10.000, implied fixed point denominator is GRAPHENE_COLLATERAL_RATIO_DENOM */
+      uint16_t maximum_short_squeeze_ratio = GRAPHENE_DEFAULT_MAX_SHORT_SQUEEZE_RATIO;
 
-		- When updating a call order the following condition must be maintained:
-		- debt * maintenance_price() < collateral
-		- debt * settlement_price    < debt * maintenance
-		- debt * maintenance_price() < debt * max_short_squeeze_price()
-		- price maintenance_price()const;
-		- When selling collateral to pay off debt, the least amount of debt to receive should be
-		- min_usd = max_short_squeeze_price() * collateral
-		- This is provided to ensure that a black swan cannot be trigged due to poor liquidity alone, it must be confirmed by having the max_short_squeeze_price() move below the black swan price.
+      /**
+       *  When updating a call order the following condition must be maintained:
+       *
+       *  debt * maintenance_price() < collateral
+       *  debt * settlement_price    < debt * maintenance
+       *  debt * maintenance_price() < debt * max_short_squeeze_price()
+      price maintenance_price()const;
+       */
 
-		price max_short_squeeze_price()const;
+      /** When selling collateral to pay off debt, the least amount of debt to receive should be
+       *  min_usd = max_short_squeeze_price() * collateral
+       *
+       *  This is provided to ensure that a black swan cannot be trigged due to poor liquidity alone, it
+       *  must be confirmed by having the max_short_squeeze_price() move below the black swan price.
+       */
+      price max_short_squeeze_price()const;
+      ///@}
 
-		friend bool operator == ( const price_feed& a, const price_feed& b )
-		{
-		  return std::tie( a.settlement_price, a.maintenance_collateral_ratio, a.maximum_short_squeeze_ratio ) ==
-		  std::tie( b.settlement_price, b.maintenance_collateral_ratio, b.maximum_short_squeeze_ratio );
-		}
+      friend bool operator == ( const price_feed& a, const price_feed& b )
+      {
+         return std::tie( a.settlement_price, a.maintenance_collateral_ratio, a.maximum_short_squeeze_ratio ) ==
+                std::tie( b.settlement_price, b.maintenance_collateral_ratio, b.maximum_short_squeeze_ratio );
+      }
 
-		void validate() const;
-		bool            is_for( asset_id_type asset_id ) const;
+      void validate() const;
+      bool is_for( asset_id_type asset_id ) const;
 	};
 	
 	
@@ -1332,6 +1403,9 @@ asset_ops
 :validate()const;:   Perform internal consistency checks. @throws fc::exception if any check fails |
 
 
+bitasset_options
+^^^^^^^^^^^^^^^^^^
+
 - The bitasset_options struct contains configurable options available only to BitAssets.
 - **Note** Changes to th is struct will break protocol compatibility
 
@@ -1350,7 +1424,7 @@ asset_ops
 	};
 
 
-*The descriptions of `bitasset_options` elements*
+*The descriptions of ``bitasset_options`` elements*
 
 :feed_lifetime_sec = GRAPHENE_DEFAULT_PRICE_FEED_LIFETIME:    Time before a price feed expires 
 :minimum_feeds = 1;:    Minimum number of unexpired feeds required to extract a median feed from 
@@ -1413,6 +1487,9 @@ fba
 buyback 
 --------------------- 
 
+buyback_account_options
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. code-block:: cpp
 
 	struct buyback_account_options
@@ -1463,13 +1540,16 @@ proposal
 --------------------- 
 
 
-- `proposed_transactions`  The Graphene Transaction Proposal Protocol
+- ``proposed_transactions``  The Graphene Transaction Proposal Protocol
 - Graphene allows users to propose a transaction which requires approval of multiple accounts in order to execute.
 
-- The user proposes a transaction using proposal_create_operation, then signatory accounts use proposal_update_operations to add or remove their approvals from this operation. When a sufficient number of approvals have been granted, the operations in the proposal are used to create a virtual transaction which is subsequently evaluated. Even if the transaction fails, the proposal will be kept until the expiration time, at which point, if sufficient approval is granted, the transaction will be evaluated a final time. This allows transactions which will not execute successfully until a given time to still be executed through the proposal mechanism. The first time the proposed transaction succeeds, the proposal will be regarded as resolved, and all future updates will be invalid.
+- The user proposes a transaction using ``proposal_create_operation``, then signatory accounts use ``proposal_update_operations`` to add or remove their approvals from this operation. When a sufficient number of approvals have been granted, the operations in the proposal are used to create a virtual transaction which is subsequently evaluated. Even if the transaction fails, the proposal will be kept until the expiration time, at which point, if sufficient approval is granted, the transaction will be evaluated a final time. This allows transactions which will not execute successfully until a given time to still be executed through the proposal mechanism. The first time the proposed transaction succeeds, the proposal will be regarded as resolved, and all future updates will be invalid.
 -  The proposal system allows for arbitrarily complex or recursively nested authorities. If a recursive authority (i.e. an authority which requires approval of 'nested' authorities on other accounts) is required for a proposal, then a second proposal can be used to grant the nested authority's approval. That is, a second proposal can be created which, when sufficiently approved, adds the approval of a nested authority to the first proposal. This multiple-proposal scheme can be used to acquire approval for an arbitrarily deep authority tree. 
-- **Note** that at any time, a proposal can be approved in a single transaction if sufficient signatures are available on the proposal_update_operation, as long as the authority tree to approve the proposal does not exceed the maximum recursion depth. In practice, however, it is easier to use proposals to acquire all approvals, as this leverages on-chain notification of all relevant parties that their approval is required. Off-chain multi-signature approval requires some off-chain mechanism for acquiring several signatures on a single transaction. This off-chain synchronization can be avoided using proposals.
+- **Note** that at any time, a proposal can be approved in a single transaction if sufficient signatures are available on the ``proposal_update_operation``, as long as the authority tree to approve the proposal does not exceed the maximum recursion depth. In practice, however, it is easier to use proposals to acquire all approvals, as this leverages on-chain notification of all relevant parties that their approval is required. Off-chain multi-signature approval requires some off-chain mechanism for acquiring several signatures on a single transaction. This off-chain synchronization can be avoided using proposals.
   
+
+op_wrapper
+^^^^^^^^^^^^^^^
   
 * op_wrapper is used to get around the circular definition of operation and proposals that contain them.
 
@@ -1490,6 +1570,8 @@ proposal
 +---+------------------------------------------+	
 
 
+.. _lib-transaction-anchor:
+
 transaction 
 --------------------- 
 
@@ -1503,7 +1585,6 @@ transaction
 
 .. Note:: It is not recommended to set the @ref ref_block_num, @ref ref_block_prefix, and @ref expiration fields manually. Call the appropriate overload of @ref set_expiration instead.
    
-
 **groups operations that should be applied atomically**
 
 .. code-block:: cpp
@@ -1562,11 +1643,15 @@ transaction
 	};
 
 
+	
+signed_transaction
+^^^^^^^^^^^^^^^^^^^^^^
+	
 **adds a signature to a transaction**
 
 .. code-block:: cpp
 
-	struct signed_transaction : public transaction
+	struct c : public transaction
 	{
 	  signed_transaction( const transaction& trx = transaction() )
 		 : transaction(trx){}
@@ -1621,6 +1706,10 @@ transaction
 	  void clear() { operations.clear(); signatures.clear(); }
 	};
 
+	
+verify_authority
+^^^^^^^^^^^^^^^^^^^^^^^	
+	
 .. code-block:: cpp
 
 	void verify_authority( const vector<operation>& ops, const flat_set<public_key_type>& sigs,
@@ -1632,6 +1721,9 @@ transaction
 						  const flat_set<account_id_type>& owner_approvals = flat_set<account_id_type>());
 	
 
+processed_transaction
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^	
+	
 - captures the result of evaluating the operations contained in the transaction
 - When processing a transaction some operations generate new object IDs and these IDs cannot be known until the transaction is actually included into a block.  When a block is produced these new ids are captured and included with every transaction.  The index in operation_results should correspond to the same index in operations.
 - If an operation did not create any new object IDs then 0 should be returned.
@@ -1676,28 +1768,99 @@ withdraw_permission
 Fee
 ==============
 
+> See: ..\libraries\chain\include\graphene\chain\protocol\fee_schedule.hpp
+
+fee_helper 
+--------------------- 
+
+.. code-block:: cpp
+
+   template<typename T> struct transform_to_fee_parameters;
+   template<typename ...T>
+   struct transform_to_fee_parameters<fc::static_variant<T...>>
+   {
+      typedef fc::static_variant< typename T::fee_parameters_type... > type;
+   };
+   typedef transform_to_fee_parameters<operation>::type fee_parameters;
+
+   template<typename Operation>
+   class fee_helper {
+     public:
+      const typename Operation::fee_parameters_type& cget(const flat_set<fee_parameters>& parameters)const
+      {
+         auto itr = parameters.find( typename Operation::fee_parameters_type() );
+         FC_ASSERT( itr != parameters.end() );
+         return itr->template get<typename Operation::fee_parameters_type>();
+      }
+   };
+
+   template<>
+   class fee_helper<account_create_operation> {
+     public:
+      const account_create_operation::fee_parameters_type& cget(const flat_set<fee_parameters>& parameters)const
+      {
+         auto itr = parameters.find( account_create_operation::fee_parameters_type() );
+         FC_ASSERT( itr != parameters.end() );
+         return itr->get<account_create_operation::fee_parameters_type>();
+      }
+      typename account_create_operation::fee_parameters_type& get(flat_set<fee_parameters>& parameters)const
+      {
+         auto itr = parameters.find( account_create_operation::fee_parameters_type() );
+         FC_ASSERT( itr != parameters.end() );
+         return itr->get<account_create_operation::fee_parameters_type>();
+      }
+   };
+
+   template<>
+   class fee_helper<bid_collateral_operation> {
+     public:
+      const bid_collateral_operation::fee_parameters_type& cget(const flat_set<fee_parameters>& parameters)const
+      {
+         auto itr = parameters.find( bid_collateral_operation::fee_parameters_type() );
+         if ( itr != parameters.end() )
+            return itr->get<bid_collateral_operation::fee_parameters_type>();
+
+         static bid_collateral_operation::fee_parameters_type bid_collateral_dummy;
+         bid_collateral_dummy.fee = fee_helper<call_order_update_operation>().cget(parameters).fee;
+         return bid_collateral_dummy;
+      }
+   };
+
+   template<>
+   class fee_helper<asset_update_issuer_operation> {
+     public:
+      const asset_update_issuer_operation::fee_parameters_type& cget(const flat_set<fee_parameters>& parameters)const
+      {
+         auto itr = parameters.find( asset_update_issuer_operation::fee_parameters_type() );
+         if ( itr != parameters.end() )
+            return itr->get<asset_update_issuer_operation::fee_parameters_type>();
+
+         static asset_update_issuer_operation::fee_parameters_type dummy;
+         dummy.fee = fee_helper<asset_update_operation>().cget(parameters).fee;
+         return dummy;
+      }
+   };
+
+   template<>
+   class fee_helper<asset_claim_pool_operation> {
+     public:
+      const asset_claim_pool_operation::fee_parameters_type& cget(const flat_set<fee_parameters>& parameters)const
+      {
+         auto itr = parameters.find( asset_claim_pool_operation::fee_parameters_type() );
+         if ( itr != parameters.end() )
+            return itr->get<asset_claim_pool_operation::fee_parameters_type>();
+
+         static asset_claim_pool_operation::fee_parameters_type asset_claim_pool_dummy;
+         asset_claim_pool_dummy.fee = fee_helper<asset_fund_fee_pool_operation>().cget(parameters).fee;
+         return asset_claim_pool_dummy;
+      }
+   };
+	
+
 
 fee_schedule 
 --------------------- 
 
-> See: ..\libraries\chain\include\graphene\chain\protocol\fee_schedule.hpp
-
-.. code-block:: cpp
-
-	template<typename T> struct transform_to_fee_parameters;
-	template<typename ...T>
-	template<typename Operation>
-	typedef transform_to_fee_parameters<operation>::type fee_parameters;
-
-	struct transform_to_fee_parameters<fc::static_variant<T...>>
-
-	class fee_helper 
-	class fee_helper<account_create_operation> 
-	class fee_helper<bid_collateral_operation> 
-	class fee_helper<asset_update_issuer_operation>
-	class fee_helper<asset_claim_pool_operation> 
-	
- 
 *contains all of the parameters necessary to calculate the fee for any operation*
 
 .. code-block:: cpp
@@ -1745,6 +1908,9 @@ Vote
 vesting 
 --------------------- 
 
+linear_vesting_policy_initializer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. code-block:: cpp
 
 	struct linear_vesting_policy_initializer
@@ -1754,6 +1920,12 @@ vesting
 	  uint32_t           vesting_cliff_seconds = 0;
 	  uint32_t           vesting_duration_seconds = 0;
 	};
+
+	
+cdd_vesting_policy_initializer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+	
+.. code-block:: cpp
 
 	struct cdd_vesting_policy_initializer
 	{
@@ -1778,11 +1950,15 @@ vote
 --------------------- 
 
 - An ID for some votable object
-- This class stores an ID for a votable object. The ID is comprised of two fields: a type, and an instance. The type field stores which kind of object is being voted on, and the instance stores which specific object of that type is being referenced by this ID.
-- A value of vote_id_type is implicitly convertible to an unsigned 32-bit integer containing only the instance. It may also be implicitly assigned from a uint32_t, which will update the instance. It may not, however, be implicitly constructed from a uint32_t, as in this case, the type would be unknown.
-- On the wire, a vote_id_type is represented as a 32-bit integer with the type in the lower 8 bits and the instance in the upper 24 bits. This means that types may never exceed 8 bits, and instances may never exceed 24 bits. 
-- In JSON, a vote_id_type is represented as a string "type:instance", i.e. "1:5" would be type 1 and instance 5. 
-- **Note**: In the Graphene protocol, vote_id_type instances are unique across types; that is to say, if an object of type 1 has instance 4, an object of type 0 may not also have instance 4. In other words, the type is not a namespace for instances; it is only an informational field.
+- This class stores an ID for a votable object. The ID is comprised of two fields: **a type, and an instance**. The ``type`` field stores which kind of object is being voted on, and the ``instance`` stores which specific object of that type is being referenced by this ID.
+- A value of ``vote_id_type`` is implicitly convertible to an unsigned 32-bit integer containing only the instance. It may also be implicitly assigned from a uint32_t, which will update the instance. It may not, however, be implicitly constructed from a uint32_t, as in this case, the type would be unknown.
+- On the wire, a ``vote_id_type`` is represented as a 32-bit integer with the type in the lower 8 bits and the instance in the upper 24 bits. This means that types may never exceed 8 bits, and instances may never exceed 24 bits. 
+- In JSON, a ``vote_id_type`` is represented as a string ``type:instance``, i.e. "1:5" would be type 1 and instance 5. 
+- **Note**: In the Graphene protocol, ``vote_id_type`` instances are unique across types; that is to say, if an object of type 1 has instance 4, an object of type 0 may not also have instance 4. In other words, the type is not a namespace for instances; it is only an informational field.
+
+
+vote_id_type
+^^^^^^^^^^^^^^^^^
 
 .. code-block:: cpp
 
@@ -1929,6 +2105,10 @@ worker
 - Payment is not prorated based on percentage of the interval the worker was approved. If the chain attempts to pay a worker, but the budget is insufficient to cover its entire pay, the worker is paid the remaining budget funds, even though this does not fulfill his total pay. The worker will not receive extra pay to make up the difference later. Worker pay is placed in a vesting balance and vests over the number of days specified at the worker's creation.
 -  Once created, a worker is immutable and will be kept by the blockchain forever.
 
+
+vesting_balance_worker_initializer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. code-block:: cpp
 
 	struct vesting_balance_worker_initializer
@@ -1962,7 +2142,10 @@ Other
 config 
 --------------------- 
 
-*(none)*
+
+  #include <graphene/chain/config.hpp>
+  
+  - `config.hpp <https://github.com/bitshares/bitshares-core/blob/release/libraries/chain/include/graphene/chain/config.hpp>`_
 
 
 ext 
@@ -1970,27 +2153,109 @@ ext
 
 .. code-block:: cpp
 
-	amespace graphene { namespace chain {
+	namespace graphene { namespace chain {
 
-		using fc::unsigned_int;
+	using fc::unsigned_int;
 
-		template< typename T >
-		struct extension
-		{
-		   extension() {}
+	template< typename T >
+	struct extension
+	{
+	   extension() {}
 
-		   T value;
-		};
+	   T value;
+	};
 
-		template< typename T >
-		struct graphene_extension_pack_count_visitor{  };
+	template< typename T >
+	struct graphene_extension_pack_count_visitor
+	{
+	   graphene_extension_pack_count_visitor( const T& v ) : value(v) {}
 
-		template< typename Stream, typename T >
-		struct graphene_extension_pack_read_visitor{  };
+	   template<typename Member, class Class, Member (Class::*member)>
+	   void operator()( const char* name )const
+	   {
+		  count += ((value.*member).valid()) ? 1 : 0;
+	   }
 
-		template< typename Stream, typename T >
-		struct graphene_extension_unpack_visitor{  };
-	}};
+	   const T& value;
+	   mutable uint32_t count = 0;
+	};
+
+	template< typename Stream, typename T >
+	struct graphene_extension_pack_read_visitor
+	{
+	   graphene_extension_pack_read_visitor( Stream& s, const T& v, uint32_t _max_depth )
+	   : stream(s), value(v), max_depth(_max_depth - 1)
+	   {
+		  FC_ASSERT( _max_depth > 0 );
+	   }
+
+	   template<typename Member, class Class, Member (Class::*member)>
+	   void operator()( const char* name )const
+	   {
+		  if( (value.*member).valid() )
+		  {
+			 fc::raw::pack( stream, unsigned_int( which ), max_depth );
+			 fc::raw::pack( stream, *(value.*member), max_depth );
+		  }
+		  ++which;
+	   }
+
+	   Stream& stream;
+	   const T& value;
+	   mutable uint32_t which = 0;
+	   const uint32_t max_depth;
+	};
+
+
+	template< typename Stream, typename T >
+	struct graphene_extension_unpack_visitor
+	{
+	   graphene_extension_unpack_visitor( Stream& s, T& v, uint32_t _max_depth )
+	   : stream(s), value(v), max_depth(_max_depth - 1)
+	   {
+		  FC_ASSERT( _max_depth > 0 );
+		  unsigned_int c;
+		  fc::raw::unpack( stream, c, max_depth );
+		  count_left = c.value;
+		  maybe_read_next_which();
+	   }
+
+	   void maybe_read_next_which()const
+	   {
+		  if( count_left > 0 )
+		  {
+			 unsigned_int w;
+			 fc::raw::unpack( stream, w, max_depth );
+			 next_which = w.value;
+		  }
+	   }
+
+	   template< typename Member, class Class, Member (Class::*member)>
+	   void operator()( const char* name )const
+	   {
+		  if( (count_left > 0) && (which == next_which) )
+		  {
+			 typename Member::value_type temp;
+			 fc::raw::unpack( stream, temp, max_depth );
+			 (value.*member) = temp;
+			 --count_left;
+			 maybe_read_next_which();
+		  }
+		  else
+			 (value.*member).reset();
+		  ++which;
+	   }
+
+	   mutable uint32_t      which = 0;
+	   mutable uint32_t next_which = 0;
+	   mutable uint32_t count_left = 0;
+
+	   Stream& stream;
+	   T& value;
+	   const uint32_t max_depth;
+	};
+
+	} } 
 	
 
 .. code-block:: cpp
@@ -2000,21 +2265,76 @@ ext
 	template< typename T >
 	struct graphene_extension_from_variant_visitor
 	{
+	   graphene_extension_from_variant_visitor( const variant_object& v, T& val, uint32_t max_depth )
+		  : vo( v ), value( val ), _max_depth(max_depth - 1)
+	   {
+		  FC_ASSERT( max_depth > 0, "Recursion depth exceeded!" );
+		  count_left = vo.size();
+	   }
 
+	   template<typename Member, class Class, Member (Class::*member)>
+	   void operator()( const char* name )const
+	   {
+		  auto it = vo.find(name);
+		  if( it != vo.end() )
+		  {
+			 from_variant( it->value(), (value.*member), _max_depth );
+			 assert( count_left > 0 );    // x.find(k) returns true for n distinct values of k only if x.size() >= n
+			 --count_left;
+		  }
+	   }
 
+	   const variant_object& vo;
+	   T& value;
+	   const uint32_t _max_depth;
+	   mutable uint32_t count_left = 0;
 	};
-
-	template< typename T >
-	void from_variant( const fc::variant& var, graphene::chain::extension<T>& value, uint32_t max_depth ){  };
-
-	template< typename T >
-	struct graphene_extension_to_variant_visitor{  };
-
-	template< typename T >
-	void to_variant( const graphene::chain::extension<T>& value, fc::variant& var, uint32_t max_depth ){  };
-	
+		
 
 .. code-block:: cpp
+
+	template< typename T >
+	void from_variant( const fc::variant& var, graphene::chain::extension<T>& value, uint32_t max_depth )
+	{
+	   value = graphene::chain::extension<T>();
+	   if( var.is_null() )
+		  return;
+	   if( var.is_array() )
+	   {
+		  FC_ASSERT( var.size() == 0 );
+		  return;
+	   }
+
+	   graphene_extension_from_variant_visitor<T> vtor( var.get_object(), value.value, max_depth );
+	   fc::reflector<T>::visit( vtor );
+	   FC_ASSERT( vtor.count_left == 0 );    // unrecognized extension throws here
+	}
+
+	
+	template< typename T >
+	struct graphene_extension_to_variant_visitor
+	{
+	   graphene_extension_to_variant_visitor( const T& v, uint32_t max_depth ) : value(v), mvo(max_depth) {}
+
+	   template<typename Member, class Class, Member (Class::*member)>
+	   void operator()( const char* name )const
+	   {
+		  if( (value.*member).valid() )
+			 mvo( name, value.*member );
+	   }
+
+	   const T& value;
+	   mutable limited_mutable_variant_object mvo;
+	};
+
+	
+	template< typename T >
+	void to_variant( const graphene::chain::extension<T>& value, fc::variant& var, uint32_t max_depth )
+	{
+	   graphene_extension_to_variant_visitor<T> vtor( value.value, max_depth );
+	   fc::reflector<T>::visit( vtor );
+	   var = vtor.mvo;
+	}
 
 	namespace raw {
 
@@ -2043,6 +2363,15 @@ ext
 	}
 
 	} // fc::raw
+
+	template<typename T> struct get_typename< graphene::chain::extension<T> >
+	{ 
+	   static const char* name()
+	   { 
+		  static std::string n = std::string("graphene::chain::extension<") 
+			 + fc::get_typename<T>::name() + std::string(">");
+		  return n.c_str();
+	   } 
 	};
 	
 	

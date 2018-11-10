@@ -29,10 +29,22 @@ API
 
 * `How an Exchange can integrate their services to the BitShares UI Wallet - Gateway Integration Requirements <https://github.com/bitshares/bitshares-ui/wiki/Gateway-Integration-Requirements>`_ : from BitShares UI wiki
 * :ref:`How can I enable RPC Logging? <rpc-logging>`
+* :ref:`How to script Websockets by Python <websocket-script-support>`
+
   
 Assets
 ===========
+* Read: User Guide `BitShartes Assets Tokens <http://how.bitshares.works/en/latest/bts_holders/tokens.html>`_
 
+  1. User Issued Assets (UIAs)
+  2. Market Pegged Assets (MPAs)
+  3. Exchange Backed Assets (EBA)
+  4. Privatized BitAssets
+     - :ref:`Feed Producer <privbta-cli>`
+  5. Fee Backed Asset
+  6. Prediction Markets
+
+	
 * :ref:`How can I create a new UIA by using GUI? <creating-new-uia-gui>`
 * :ref:`How can I create a UIA manually (CLI)? <uia-create-manual>`
 * :ref:`How can I create a MPA manually (CLI)? <mpa-create-manual>`
@@ -50,8 +62,17 @@ Prediction Market
 BitShares Decentralized Exchange (DEX)
 =========================================
 
+* Read: `User Guide : Dex <https://how.bitshares.works/en/latest/bts_holders/dex.html>`_
+
+  1. Trading
+  2. Short Selling BitAssets
+  3. MarginCall Mechanics
+  
 * :ref:`How can I run own Decentralized Exchange (DEX)? <distributed-access-to-dex>`
 * :ref:`How can I prepare BitShares Exchange? (Single Node Edition) <exchange-single-node>`
+
+
+
 
 Committee Guide
 ======================
@@ -60,6 +81,13 @@ Committee Guide
 * :ref:`How to create a Proposal to change a fee? <committee-fee-change>`
 * :ref:`How to approve/disapprove a Proposal <committee-approve-proposal>`
 * :ref:`How to Propose Committee Actions <committee-propose-action>`
+
+Delegated Proof of Stake 
+============================
+* Read" User Guide `(DPOS) <https://how.bitshares.works/en/latest/technology/dpos.html#>`_
+
+
+
 
 .. _monitoring_support:
 
@@ -76,9 +104,13 @@ Performance
 Plugin
 ===================
 * :ref:`ElasticSearch Plugin: How to store account history data into an elasticsearch database <elastic-search-plugin>`
-* :ref:`Memory reduction for nodes: Help to reduce RAM usage significantly by using witness_node executable options <memory-nodes>`
-* `Template Plugin - (create a demo API hello) <https://github.com/bitshares/bitshares-core/blob/hello_plugin/libraries/plugins/hello/README.md>`_
+* :ref:`Memory Reduction for Nodes: Help to reduce RAM usage significantly by using witness_node executable options <memory-nodes>`
+* `Plugin Template - (create a demo API hello) <https://github.com/bitshares/bitshares-core/blob/hello_plugin/libraries/plugins/hello/README.md>`_
   
+  
+Smart Contracts
+====================
+
 
 
 Testnets
@@ -117,7 +149,10 @@ Wallet / CLI
 * :ref:`How to import a GUI-Wallet Account into CLI-Wallet <howto-import-gui-wallet-account-cli>`
 * `Where to find BitShares Public Full Nodes <https://github.com/bitshares/bitshares-ui/blob/staging/app/api/apiConfig.js>`_
 
-Witness (Full) node Guide
+
+.. _witness-node-guide-tutorials: 
+  
+Witness (Full) Node Guide
 ====================
 
 * :ref:`How to connect to your own Full Node (GUI) <howto-connect-own-full-node-gui>`
@@ -125,7 +160,7 @@ Witness (Full) node Guide
 * :ref:`What is System Requirements <system-requirements-node>`  (updated: 2018-07-02)
 * :ref:`How to Run and Use a Full Node <how-to-run-full-node2>`
 * :ref:`How to Become an Active Witness <howto-become-active-witness>`
-* :ref:`How to run node in the background by using GNU screen <manage-gun-screen>`
+* :ref:`How to run Node in the background by using GNU screen <manage-gun-screen>`
 * :ref:`How to run a BitShares API Node <run-api-node-guide>`		
 * :ref:`How to verify block production <veryfy_block_production>`
 * :ref:`How to backup a server <witness-backup-server>`

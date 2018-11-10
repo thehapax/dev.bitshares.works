@@ -2,7 +2,7 @@
 
 
 .. toctree::
-    :caption: Introduction 
+    :caption: Introduction :
     :maxdepth: 2
 
     intro/architectures
@@ -28,7 +28,7 @@
 	
 .. toctree::
     :maxdepth: 2
-    :numbered:
+    :numbered:	
     :caption: API
 
     api/api_about

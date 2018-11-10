@@ -6,12 +6,13 @@ Chain - db_xxx.cpp
 *******************************************
 
 
-* File directory: (../ibraries/chain/xxx.cpp)
+* File directory: (../libraries/chain/xxx.cpp)
 
 .. contents:: Table of Contents
    :local:
    
 -------
+
 
 db_balance.cpp
 ===============================
@@ -357,6 +358,8 @@ push_block
 	   return result;
 	}
 
+	
+.. code-block:: cpp 
 
 	bool database::_push_block(const signed_block& new_block)
 	{ try {
@@ -466,6 +469,8 @@ push_transaction
 	   return result;
 	} FC_CAPTURE_AND_RETHROW( (trx) ) }
 
+
+.. code-block:: cpp 
 
 	processed_transaction database::_push_transaction( const signed_transaction& trx )
 	{
@@ -596,6 +601,8 @@ generate_block
 	} FC_CAPTURE_AND_RETHROW() }
 
 
+.. code-block:: cpp 
+	
 	signed_block database::_generate_block(
 	   fc::time_point_sec when,
 	   witness_id_type witness_id,
@@ -609,17 +616,6 @@ generate_block
 	   witness_id_type scheduled_witness = get_scheduled_witness( slot_num );
 	   FC_ASSERT( scheduled_witness == witness_id );
 
-	   const auto& witness_obj = witness_id(*this);
-
-	   if( !(skip & skip_witness_signature) )
-		  FC_ASSERT( witness_obj.signing_key == block_signing_private_key.get_public_key() );
-
-	   static const size_t max_block_header_size = fc::raw::pack_size( signed_block_header() ) + 4;
-	   auto maximum_block_size = get_global_properties().parameters.maximum_block_size;
-	   size_t total_block_size = max_block_header_size;
-
-	   signed_block pending_block;
-
 	   //
 	   // The following code throws away existing pending_tx_session and
 	   // rebuilds it by re-applying pending transactions.
@@ -631,17 +627,40 @@ generate_block
 	   // the value of the "when" variable is known, which means we need to
 	   // re-apply pending transactions in this method.
 	   //
+
+	   // pop pending state (reset to head block state)
 	   _pending_tx_session.reset();
+
+	   // Check witness signing key
+	   if( !(skip & skip_witness_signature) )
+	   {
+		  // Note: if this check failed (which won't happen in normal situations),
+		  // we would have temporarily broken the invariant that
+		  // _pending_tx_session is the result of applying _pending_tx.
+		  // In this case, when the node received a new block,
+		  // the push_block() call will re-create the _pending_tx_session.
+		  FC_ASSERT( witness_id(*this).signing_key == block_signing_private_key.get_public_key() );
+	   }
+
+	   static const size_t max_partial_block_header_size = fc::raw::pack_size( signed_block_header() )
+														   - fc::raw::pack_size( witness_id_type() ) // witness_id
+														   + 3; // max space to store size of transactions (out of block header),
+																// +3 means 3*7=21 bits so it's practically safe
+	   const size_t max_block_header_size = max_partial_block_header_size + fc::raw::pack_size( witness_id );
+	   auto maximum_block_size = get_global_properties().parameters.maximum_block_size;
+	   size_t total_block_size = max_block_header_size;
+
+	   signed_block pending_block;
+
 	   _pending_tx_session = _undo_db.start_undo_session();
 
 	   uint64_t postponed_tx_count = 0;
-	   // pop pending state (reset to head block state)
 	   for( const processed_transaction& tx : _pending_tx )
 	   {
 		  size_t new_total_size = total_block_size + fc::raw::pack_size( tx );
 
 		  // postpone transaction if it would make block too big
-		  if( new_total_size >= maximum_block_size )
+		  if( new_total_size > maximum_block_size )
 		  {
 			 postponed_tx_count++;
 			 continue;
@@ -651,12 +670,21 @@ generate_block
 		  {
 			 auto temp_session = _undo_db.start_undo_session();
 			 processed_transaction ptx = _apply_transaction( tx );
-			 temp_session.merge();
 
 			 // We have to recompute pack_size(ptx) because it may be different
 			 // than pack_size(tx) (i.e. if one or more results increased
 			 // their size)
-			 total_block_size += fc::raw::pack_size( ptx );
+			 new_total_size = total_block_size + fc::raw::pack_size( ptx );
+			 // postpone transaction if it would make block too big
+			 if( new_total_size > maximum_block_size )
+			 {
+				postponed_tx_count++;
+				continue;
+			 }
+
+			 temp_session.merge();
+
+			 total_block_size = new_total_size;
 			 pending_block.transactions.push_back( ptx );
 		  }
 		  catch ( const fc::exception& e )
@@ -687,16 +715,11 @@ generate_block
 	   if( !(skip & skip_witness_signature) )
 		  pending_block.sign( block_signing_private_key );
 
-	   // TODO:  Move this to _push_block() so session is restored.
-	   if( !(skip & skip_block_size_check) )
-	   {
-		  FC_ASSERT( fc::raw::pack_size(pending_block) <= get_global_properties().parameters.maximum_block_size );
-	   }
-
-	   push_block( pending_block, skip );
+	   push_block( pending_block, skip | skip_transaction_signatures ); // skip authority check when pushing self-generated blocks
 
 	   return pending_block;
 	} FC_CAPTURE_AND_RETHROW( (witness_id) ) }
+	//** 20181025
 
 
 pop_block
@@ -782,9 +805,9 @@ get_applied_operations
 apply_block	
 ------------
 	
-//////////////////// private methods ////////////////////
-
 .. code-block:: cpp 
+
+     //////////////////// private methods ///////////////////
 
 	void database::apply_block( const signed_block& next_block, uint32_t skip )
 	{
@@ -806,6 +829,8 @@ apply_block
 	   return;
 	}
 	
+.. code-block:: cpp 
+
 	void database::_apply_block( const signed_block& next_block )
 	{ try {
 	   uint32_t next_block_num = next_block.block_num();
@@ -887,6 +912,8 @@ apply_transaction
 	   return result;
 	}
 
+.. code-block:: cpp 
+
 	processed_transaction database::_apply_transaction(const signed_transaction& trx)
 	{ try {
 	   uint32_t skip = get_node_properties().skip_flags;
@@ -896,9 +923,12 @@ apply_transaction
 
 	   auto& trx_idx = get_mutable_index_type<transaction_index>();
 	   const chain_id_type& chain_id = get_chain_id();
-	   auto trx_id = trx.id();
-	   FC_ASSERT( (skip & skip_transaction_dupe_check) ||
-				  trx_idx.indices().get<by_trx_id>().find(trx_id) == trx_idx.indices().get<by_trx_id>().end() );
+	   transaction_id_type trx_id;
+	   if( !(skip & skip_transaction_dupe_check) )
+	   {
+		  trx_id = trx.id();
+		  FC_ASSERT( trx_idx.indices().get<by_trx_id>().find(trx_id) == trx_idx.indices().get<by_trx_id>().end() );
+	   }
 	   transaction_evaluation_state eval_state(this);
 	   const chain_parameters& chain_parameters = get_global_properties().parameters;
 	   eval_state._trx = &trx;
@@ -932,7 +962,7 @@ apply_transaction
 	   //Insert transaction into unique transactions database.
 	   if( !(skip & skip_transaction_dupe_check) )
 	   {
-		  create<transaction_object>([&](transaction_object& transaction) {
+		  create<transaction_object>([&trx_id,&trx](transaction_object& transaction) {
 			 transaction.trx_id = trx_id;
 			 transaction.trx = trx;
 		  });
@@ -3400,15 +3430,43 @@ reindex
 	   }
 	   else
 		  _undo_db.disable();
+
+	   uint32_t skip = skip_witness_signature |
+					   skip_block_size_check |
+					   skip_merkle_check |
+					   skip_transaction_signatures |
+					   skip_transaction_dupe_check |
+					   skip_tapos_check |
+					   skip_witness_schedule_check |
+					   skip_authority_check;
+
+	   size_t total_processed_block_size;
+	   size_t total_block_size = _block_id_to_block.total_block_size();
+	   const auto& gpo = get_global_properties();
 	   for( uint32_t i = head_block_num() + 1; i <= last_block_num; ++i )
 	   {
-		  if( i % 10000 == 0 ) std::cerr << "   " << double(i*100)/last_block_num << "%   "<<i << " of " <<last_block_num<<"   \n";
+		  if( i % 10000 == 0 ) 
+		  {
+			 total_processed_block_size = _block_id_to_block.blocks_current_position();
+
+			 ilog(
+				"   [by size: ${size}%   ${processed} of ${total}]   [by num: ${num}%   ${i} of ${last}]",
+				("size", double(total_processed_block_size) / total_block_size * 100)
+				("processed", total_processed_block_size)
+				("total", total_block_size)
+				("num", double(i*100)/last_block_num)
+				("i", i)
+				("last", last_block_num)
+			 );
+		  }
 		  if( i == flush_point )
 		  {
 			 ilog( "Writing database to disk at block ${i}", ("i",i) );
 			 flush();
 			 ilog( "Done" );
 		  }
+		  if( head_block_time() >= last_block->timestamp - gpo.parameters.maximum_time_until_expiration )
+			 skip &= ~skip_transaction_dupe_check;
 		  fc::optional< signed_block > block = _block_id_to_block.fetch_by_number(i);
 		  if( !block.valid() )
 		  {
@@ -3430,27 +3488,18 @@ reindex
 			 break;
 		  }
 		  if( i < undo_point )
-			 apply_block(*block, skip_witness_signature |
-								 skip_transaction_signatures |
-								 skip_transaction_dupe_check |
-								 skip_tapos_check |
-								 skip_witness_schedule_check |
-								 skip_authority_check);
+			 apply_block( *block, skip );
 		  else
 		  {
 			 _undo_db.enable();
-			 push_block(*block, skip_witness_signature |
-								skip_transaction_signatures |
-								skip_transaction_dupe_check |
-								skip_tapos_check |
-								skip_witness_schedule_check |
-								skip_authority_check);
+			 push_block( *block, skip );
 		  }
 	   }
 	   _undo_db.enable();
 	   auto end = fc::time_point::now();
 	   ilog( "Done reindexing, elapsed time: ${t} sec", ("t",double((end-start).count())/1000000.0 ) );
 	} FC_CAPTURE_AND_RETHROW( (data_dir) ) }
+	 //(20181019)
 
 
 wipe

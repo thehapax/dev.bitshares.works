@@ -27,16 +27,15 @@ Both represent nodes in the network that verify all transactions and blocks agai
 System Requirements
 ==========================
 
-By default the witness node will start in reduced memory ram mode by using some of the commands detailed in :ref:`Memory reduction for nodes <memory-nodes>`.
-In order to run a full node with all the account history you need to remove `partial-operations` and `max-ops-per-account` from your config file. Please note that currently(2018-07-02) a full node need more than 100GB of RAM to operate and required memory is growing fast. Consider the following table before running a node:
+.. Attention:: **IMPORTANT:** By default the witness node will start in reduced memory mode by using some of the commands detailed in :ref:`Memory reduction for nodes <memory-nodes>`.
+In order to run a full node with all the account history you need to remove ``partial-operations`` and ``max-ops-per-account`` from your config file. Please note that currently(2018-10-17) a full node will need more than 160GB of RAM to operate and required memory is growing fast. Consider the following table as minimal requirements before running a node:
 
 
-
-+-----------+-----------+-------------+----------------------+
-| Default   | Full      | Minimal     | ElasticSearch        |
-+===========+===========+=============+======================+
-| 20G RAM   | 120G RAM  | 4G RAM      | 200G SSD HD, 16G RAM |
-+-----------+-----------+-------------+----------------------+
++-------------------+--------------------+-----------------+-------------------+
+|    Default        |    Full            |     Minimal     | ElasticSearch     |
++===================+====================+=================+===================+
+| 100G SSD, 16G RAM | 200G SSD, 120G RAM | 80G SSD, 8G RAM | 500G SSD, 32G RAM |
++-------------------+--------------------+-----------------+-------------------+
 
 
 Full Node
@@ -65,10 +64,20 @@ In order to allow RPC calls for blockchain operations you need to modify the fol
 
 This will open the port 8090 for global queries only. Since the witness node only maintains the blockchain and (unless you are an actively block producing witness) no private keys are involved, it is safe to expose your witness to the internet.
 
+
+* :ref:`How to Run and Use a Full Node <how-to-run-full-node2>`
+* :ref:`Memory Reduction for Nodes: Help to reduce RAM usage significantly by using witness_node executable options <memory-nodes>`
+
+.. note:: Learn more :ref:`how to manage Witness(Full) Node <witness-node-guide-tutorials>`, please check our tutorials. 
+
+
 Restart the Witness Node
 =================================
 
-When restarting the witness node, it may be required to append the ``--replay-blockchain`` parameter to regenerate the local (in-memory) blockchain state.
+When restarting the witness node, it may be required to append the ``--replay-blockchain`` parameter to regenerate the local (in-memory) blockchain state. 
+
+.. tip:: If you want to close the Witness Node in a clean way, use ``Ctrl-C`` in Windows.
+
 
 	
 Public Full Node information 
