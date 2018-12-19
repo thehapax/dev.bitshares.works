@@ -10,8 +10,8 @@ Join Us!
 	 
 * `BitShares Community <https://t.me/bitshares_community>`_
 * `Forum - BitSharesTalk`_ 
-* `Telagram - BitSharesDEX`_
-* `Telagram - BitShares Traders`_
+* `Telegram - BitSharesDEX`_
+* `Telegram - BitShares Traders`_
 * `Discord - BitShares`_
 * `BitSares on Steemit`_
 * `Twitter`_
